@@ -1,0 +1,11 @@
+[package]
+name = "gmt-kpp"
+version = "0.1.0"
+authors = ["Rod Conan <rconan@gmto.org>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+optust = { git = "https://github.com/rconan/optust.git", branch = "main" }
+rustfft = "5.0.1"
