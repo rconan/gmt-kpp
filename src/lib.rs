@@ -65,8 +65,8 @@ pub struct PSSn {
     n_pupil: usize,
     n_otf: usize,
     cpx_amplitude: Vec<Complex<f64>>,
-    reference_telescope_otf: Vec<Complex<f64>>,
-    atmosphere_otf: Vec<f64>,
+    pub reference_telescope_otf: Vec<Complex<f64>>,
+    pub atmosphere_otf: Vec<f64>,
     denom: f64,
     fft_forward: Arc<dyn Fft<f64>>,
     fft_inverse: Arc<dyn Fft<f64>>,
@@ -99,6 +99,7 @@ impl PSSn {
         atmosphere_otf
     }
     fn cpx_amplitude_padding(&mut self, pupil: Vec<Vec<f64>>, phase: Option<Vec<Vec<f64>>>) {
+        self.cpx_amplitude =  vec![Complex::zero(); self.n_otf * self.n_otf];
         let wavenumber = 2. * std::f64::consts::PI / self.wavelength;
         for i in 0..self.n_pupil {
             let q = i as i32 - self.n_pupil as i32 / 2;
@@ -118,7 +119,6 @@ impl PSSn {
                 match phase {
                     Some(ref phase) => {
                         let (s, c) = (wavenumber * phase[j][i]).sin_cos();
-                        let kk = ii * self.n_otf + jj;
                         self.cpx_amplitude[kk].re = pupil[j][i] * c;
                         self.cpx_amplitude[kk].im = pupil[j][i] * s;
                     }
