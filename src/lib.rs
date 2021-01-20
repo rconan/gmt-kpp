@@ -27,7 +27,7 @@ impl KPP {
         self,
         pupil_size: f64,
         pupil_sampling: usize,
-        telescope_pupil: Vec<Vec<f64>>,
+        telescope_pupil: &[f64],
     ) -> PSSn {
         let r0 = (self.r0_at_zenith.powf(-5_f64 / 3_f64) / self.zenith_angle.cos())
             .powf(-3_f64 / 5_f64)
@@ -98,7 +98,7 @@ impl PSSn {
         }
         atmosphere_otf
     }
-    fn cpx_amplitude_padding(&mut self, pupil: Vec<Vec<f64>>, phase: Option<Vec<Vec<f64>>>) {
+    fn cpx_amplitude_padding(&mut self, pupil: &[f64], phase: Option<&[f64]>) {
         self.cpx_amplitude =  vec![Complex::zero(); self.n_otf * self.n_otf];
         let wavenumber = 2. * std::f64::consts::PI / self.wavelength;
         for i in 0..self.n_pupil {
@@ -115,15 +115,16 @@ impl PSSn {
                 } else {
                     q as usize
                 };
+                let k = i* self.n_pupil +j;
                 let kk = ii * self.n_otf + jj;
                 match phase {
                     Some(ref phase) => {
-                        let (s, c) = (wavenumber * phase[j][i]).sin_cos();
-                        self.cpx_amplitude[kk].re = pupil[j][i] * c;
-                        self.cpx_amplitude[kk].im = pupil[j][i] * s;
+                        let (s, c) = (wavenumber * phase[k]).sin_cos();
+                        self.cpx_amplitude[kk].re = pupil[k] * c;
+                        self.cpx_amplitude[kk].im = pupil[k] * s;
                     }
                     None => {
-                        self.cpx_amplitude[kk].re = pupil[j][i];
+                        self.cpx_amplitude[kk].re = pupil[k];
                     }
                 }
             }
@@ -131,8 +132,8 @@ impl PSSn {
     }
     pub fn optical_transfer_function(
         &mut self,
-        pupil: Vec<Vec<f64>>,
-        phase: Option<Vec<Vec<f64>>>,
+        pupil: &[f64],
+        phase: Option<&[f64]>
     ) {
         self.cpx_amplitude_padding(pupil, phase);
         self.fft_forward
@@ -172,7 +173,7 @@ impl PSSn {
         self.fft_inverse
             .process_with_scratch(&mut self.cpx_amplitude, &mut self.scratch);
     }
-    pub fn init(&mut self, pupil: Vec<Vec<f64>>) {
+    pub fn init(&mut self, pupil: &[f64]) {
         self.optical_transfer_function(pupil, None);
         self.reference_telescope_otf = self.cpx_amplitude.clone();
         self.denom = self
@@ -181,7 +182,7 @@ impl PSSn {
             .zip(self.reference_telescope_otf.iter())
             .fold(0., |a, (c, o)| a + c * c * o.norm_sqr());
     }
-    pub fn estimate(&mut self, pupil: Vec<Vec<f64>>, phase: Option<Vec<Vec<f64>>>) -> f64 {
+    pub fn estimate(&mut self, pupil: &[f64], phase: Option<&[f64]>) -> f64 {
         self.optical_transfer_function(pupil, phase);
         let num = self
             .atmosphere_otf
