@@ -23,6 +23,12 @@ impl KPP {
     pub fn new() -> Self {
         Default::default()
     }
+    pub fn wavelength(self, wavelength: f64) -> Self {
+        Self {
+            wavelength,
+            ..self
+        }
+    }
     pub fn pssn(
         self,
         pupil_size: f64,
